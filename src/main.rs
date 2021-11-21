@@ -1,6 +1,7 @@
-use std::env;
+/// Solved by Stefan Schindler <k11946678@students.jku.at>
+use std::{env, num::ParseIntError, process::exit};
 
-use rand::{prelude::IteratorRandom, thread_rng};
+use rand::{prelude::SliceRandom, thread_rng};
 
 struct Lotto {
     take: usize,
@@ -10,22 +11,54 @@ struct Lotto {
 
 impl Lotto {
     fn new(take: usize, from: usize) -> Self {
-        todo!("Implement")
+        assert!(take <= from, "take must be smaller than from");
+        let mut rng = thread_rng();
+        let mut all_numbers = (0..from).collect::<Vec<usize>>();
+
+        all_numbers.shuffle(&mut rng);
+
+        let numbers = all_numbers[0..take].into();
+
+        Self {
+            take,
+            from,
+            numbers,
+        }
     }
 
+    // Need this function for testing only
+    #[cfg(test)]
     fn get_numbers(self) -> Vec<usize> {
-        todo!("Implement")
+        self.numbers
     }
 }
 
+#[must_use]
 fn format_lotto_results(lotto: &Lotto) -> String {
-    // Tip: Use the format macro
-    todo!("Implement")
+    format!("{} of {}: {:?}", lotto.take, lotto.from, lotto.numbers)
 }
 
 fn main() {
-    let args: Vec<String> = env::args().collect();
-    todo!("Implement CLI")
+    let args: Vec<String> = env::args().skip(1).collect();
+    assert!(args.len() % 2 == 0, "expected an even amount of arguments");
+
+    for pair in args.chunks(2) {
+        if let Err(e) = do_lotto(&pair[0], &pair[1]) {
+            eprintln!("invalid arguments: {:?} <- {:?}", pair, e);
+            exit(1);
+        }
+    }
+}
+
+fn do_lotto(take: &String, from: &String) -> Result<(), ParseIntError> {
+    let take = take.parse()?;
+    let from = from.parse()?;
+
+    let lotto = Lotto::new(take, from);
+
+    println!("{}\n", format_lotto_results(&lotto));
+
+    Ok(())
 }
 
 #[test]
